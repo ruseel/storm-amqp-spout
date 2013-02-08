@@ -1,8 +1,126 @@
+<!doctype html>
 <html>
-<head>
-<meta http-equiv="refresh" content="0; url=doc/index.html">
-</head>
-<body>
-<a href="doc/index.html">Javadoc</a>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Storm-amqp-spout by Xorlev</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Storm-amqp-spout</h1>
+        <p>Allows a Storm topology to consume an AMQP exchange as an input source.</p>
+
+        <p class="view"><a href="https://github.com/Xorlev/storm-amqp-spout">View the Project on GitHub <small>Xorlev/storm-amqp-spout</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Xorlev/storm-amqp-spout/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Xorlev/storm-amqp-spout/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Xorlev/storm-amqp-spout">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>storm-amqp-spout: AMQP input source for Storm</h1>
+
+<p>storm-amqp-spout allows a <a href="https://github.com/nathanmarz/storm" title="Storm project homepage">Storm</a> topology to consume an AMQP queue as an
+input source.  It currently provides:</p>
+
+<ul>
+<li>
+<tt><a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/spout/AMQPSpout.html" title="Javadoc for AMQPSpout">AMQPSpout</a></tt>: an implementation of
+<a href="http://nathanmarz.github.com/storm/doc/backtype/storm/topology/IRichSpout.html" title="Javadoc for backtype.storm.topology.IRichSpout"><code>backtype.storm.topology.IRichSpout</code></a> that connects to an AMQP
+broker, consumes the messages routed to a specified AMQP queue and emits them
+as Storm tuples.</li>
+<li>
+<tt><a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/amqp/QueueDeclaration.html" title="Javadoc for QueueDeclaration">QueueDeclaration</a></tt>: an interface that encapsulates declaring an
+AMQP queue and setting up any exchange bindings it requires, used by
+AMQPSpout to set up the queue to consume.</li>
+<li>
+<tt><a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/amqp/ExclusiveQueueWithBinding.html" title="Javadoc for ExclusiveQueueWithBinding">ExclusiveQueueWithBinding</a></tt>: a QueueDeclaration suitable for
+prototyping and one-off analytics use cases.</li>
+<li>
+<tt><a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/amqp/SharedQueueWithBinding.html" title="Javadoc for SharedQueueWithBinding">SharedQueueWithBinding</a></tt>: a QueueDeclaration suitable for
+production use cases needing guaranteed processing.</li>
+</ul><p>You'll need to provide a <a href="http://nathanmarz.github.com/storm/doc/backtype/storm/spout/Scheme.html" title="Javadoc for backtype.storm.spout.Scheme">Scheme</a> to tell AMQPSpout how to interpret the
+messages and turn them into Storm tuples.  See e.g. <a href="https://github.com/rapportive-oss/storm-json" title="JSON {,de}serialisation support for Storm">storm-json</a> if your
+messages are JSON.</p>
+
+<h2>Documentation</h2>
+
+<p>The Javadocs can be found at <a href="">http://code.rapportive.com/storm-amqp-spout</a>.</p>
+
+<h2>Usage</h2>
+
+<p>To produce a jar:</p>
+
+<pre><code>$ mvn package
+</code></pre>
+
+<p>To install in your local Maven repository:</p>
+
+<pre><code>$ mvn install
+</code></pre>
+
+<p>To use in your <code>pom.xml</code>:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;project&gt;</span>
+  <span class="c">&lt;!-- ... --&gt;</span>
+  <span class="nt">&lt;dependencies&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+      <span class="nt">&lt;groupId&gt;</span>com.rapportive<span class="nt">&lt;/groupId&gt;</span>
+      <span class="nt">&lt;artifactId&gt;</span>storm-amqp-spout<span class="nt">&lt;/artifactId&gt;</span>
+      <span class="nt">&lt;version&gt;</span>0.1.1<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;/dependency&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+  <span class="nt">&lt;/dependencies&gt;</span>
+  <span class="c">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/project&gt;</span>
+</pre></div>
+
+<h2>Caveats</h2>
+
+<p>This is early software.  It has been used at production volumes, but not yet
+for business-critical use cases.  It may break and the API is liable to change
+completely between releases.  Pull requests, patches and bug reports are very
+welcome.</p>
+
+<p><strong>N.B.</strong> if you need to guarantee all messages are reliably processed, you
+should have AMQPSpout consume from a queue that is <em>not</em> set as 'exclusive' or
+'auto-delete': otherwise if the spout task crashes or is restarted, the queue
+will be deleted and any messages in it lost, as will any messages published
+while the task remains down.  See <a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/amqp/SharedQueueWithBinding.html" title="Javadoc for SharedQueueWithBinding">SharedQueueWithBinding</a> to declare a
+shared queue that allows for guaranteed processing.  (For prototyping, an
+<a href="http://code.rapportive.com/storm-amqp-spout/doc/com/rapportive/storm/amqp/ExclusiveQueueWithBinding.html" title="Javadoc for ExclusiveQueueWithBinding">ExclusiveQueueWithBinding</a> may be simpler to manage.)</p>
+
+<p>This does not currently handle malformed messages very well: the spout worker
+will crash if the provided <a href="http://nathanmarz.github.com/storm/doc/backtype/storm/spout/Scheme.html" title="Javadoc for backtype.storm.spout.Scheme">Scheme</a> fails to deserialise a message.</p>
+
+<p>This does not currently support retrying messages in the event of transient
+failure to process: any message which the topology fails to process will simply
+be dropped.  This is to prevent infinite redelivery in the event of
+non-transient failures (e.g. malformed messages, though see previous caveat!).
+This will probably be made configurable in a future release.</p>
+
+<h2>Compatibility</h2>
+
+<p>AMQPSpout has been tested with RabbitMQ 2.3.1, 2.6.1, 2.7.0, 2.8.2, and 3.0.2  It should probably work with other
+versions and other AMQP brokers.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Xorlev">Xorlev</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
 </html>

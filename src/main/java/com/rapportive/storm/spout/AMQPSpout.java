@@ -1,8 +1,11 @@
 package com.rapportive.storm.spout;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Values;
 import org.apache.log4j.Logger;
 
 import com.rabbitmq.client.AMQP.Queue;
@@ -57,7 +60,7 @@ import backtype.storm.utils.Utils;
  * @author Sam Stokes (sam@rapportive.com)
  */
 public class AMQPSpout implements IRichSpout {
-    private static final long serialVersionUID = 11258942292629263L;
+    private static final long serialVersionUID = 11258942292629264L;
 
     private static final Logger log = Logger.getLogger(AMQPSpout.class);
 
@@ -90,6 +93,13 @@ public class AMQPSpout implements IRichSpout {
      * before attempting to reconnect.
      */
     public static final long WAIT_AFTER_SHUTDOWN_SIGNAL = 10000L;
+
+    /**
+     * Name of the stream where malformed deserialized messages are sent for
+     * special handling. Generally with a {@link Scheme} implementation returns
+     * null or a zero-length tuple
+     */
+    public static String ERROR_STREAM_NAME = "error-stream";
 
     private final String amqpHost;
     private final int amqpPort;
@@ -262,6 +272,10 @@ public class AMQPSpout implements IRichSpout {
     /**
      * Emits the next message from the queue as a tuple.
      *
+     * Serialization schemes returning null will immediately ack
+     * and then emit unanchored on the {@link #ERROR_STREAM_NAME} stream for
+     * further handling by the consumer.
+     *
      * <p>If no message is ready to emit, this will wait a short time
      * ({@link #WAIT_FOR_NEXT_MESSAGE}) for one to arrive on the queue,
      * to avoid a tight loop in the spout worker.</p>
@@ -274,12 +288,14 @@ public class AMQPSpout implements IRichSpout {
                 if (delivery == null) return;
                 final long deliveryTag = delivery.getEnvelope().getDeliveryTag();
                 final byte[] message = delivery.getBody();
-                collector.emit(serialisationScheme.deserialize(message), deliveryTag);
-                /*
-                 * TODO what to do about malformed messages? Skip?
-                 * Avoid infinite retry!
-                 * Maybe we should output them on a separate stream.
-                 */
+
+                List<Object> deserializedMessage = serialisationScheme.deserialize(message);
+
+                if (deserializedMessage != null && deserializedMessage.size() > 0) {
+                    collector.emit(deserializedMessage, deliveryTag);
+                } else {
+                    handleMalformedDelivery(deliveryTag, message);
+                }
             } catch (ShutdownSignalException e) {
                 log.warn("AMQP connection dropped, will attempt to reconnect...");
                 Utils.sleep(WAIT_AFTER_SHUTDOWN_SIGNAL);
@@ -289,7 +305,6 @@ public class AMQPSpout implements IRichSpout {
             }
         }
     }
-
 
     /**
      * Connects to the AMQP broker, declares the queue and subscribes to
@@ -313,6 +328,19 @@ public class AMQPSpout implements IRichSpout {
         } catch (IOException e) {
             log.error("AMQP setup failed", e);
         }
+    }
+
+
+    /**
+     * Acks the bad message to avoid retry loops. Also emits the bad message
+     * unreliably on the {@link #ERROR_STREAM_NAME} stream for consumer handling.
+     * @param deliveryTag AMQP delivery tag
+     * @param message bytes of the bad message
+     */
+    private void handleMalformedDelivery(long deliveryTag, byte[] message) {
+        log.debug("Malformed deserialized message, null or zero-length. " + deliveryTag);
+        ack(deliveryTag);
+        collector.emit(ERROR_STREAM_NAME, new Values(deliveryTag, message));
     }
 
 
@@ -355,10 +383,14 @@ public class AMQPSpout implements IRichSpout {
     /**
      * Declares the output fields of this spout according to the provided
      * {@link backtype.storm.spout.Scheme}.
+     *
+     * Additionally declares an error stream (see {@link #ERROR_STREAM_NAME} for handling
+     * malformed or empty messages to avoid infinite retry loops
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(serialisationScheme.getOutputFields());
+        declarer.declareStream(ERROR_STREAM_NAME, new Fields("deliveryTag", "bytes"));
     }
 
     @Override

@@ -1,15 +1,30 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.rapportive</groupId>
+    <groupId>com.xorlev</groupId>
     <artifactId>storm-amqp-spout</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.0-SNAPSHOT</version>
+
+    <scm>
+        <connection>scm:git:git@github.com:Xorlev/storm-amqp-spout.git</connection>
+        <url>http://github.com/Xorlev/storm-amqp-spout</url>
+        <developerConnection>scm:git:git@github.com:Xorlev/storm-amqp-spout.git</developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>clojars</id>
+            <name>Clojars repository</name>
+            <url>http://clojars.org/repo</url>
+        </repository>
+    </distributionManagement>
+
     <repositories>
         <repository>
-            <id>clojars.org</id>
+            <id>clojars</id>
             <url>http://clojars.org/repo</url>
         </repository>
     </repositories>
+
     <dependencies>
         <dependency>
             <groupId>storm</groupId>
@@ -33,12 +48,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8</version>
+                <version>2.9</version>
                 <configuration>
                     <links>
                         <link>http://nathanmarz.github.com/storm/doc</link>
                     </links>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.4</version>
             </plugin>
         </plugins>
     </build>

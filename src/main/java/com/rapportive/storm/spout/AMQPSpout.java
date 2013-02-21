@@ -58,6 +58,7 @@ import backtype.storm.utils.Utils;
  * @see com.rapportive.storm.amqp.ExclusiveQueueWithBinding
  *
  * @author Sam Stokes (sam@rapportive.com)
+ * @author Michael Rose (elementation@gmail.com)
  */
 public class AMQPSpout implements IRichSpout {
     private static final long serialVersionUID = 11258942292629264L;
@@ -347,13 +348,7 @@ public class AMQPSpout implements IRichSpout {
     private void setupAMQP() throws IOException {
         final int prefetchCount = this.prefetchCount;
 
-        final ConnectionFactory connectionFactory = new ConnectionFactory();
-
-        connectionFactory.setHost(amqpHost);
-        connectionFactory.setPort(amqpPort);
-        connectionFactory.setUsername(amqpUsername);
-        connectionFactory.setPassword(amqpPassword);
-        connectionFactory.setVirtualHost(amqpVhost);
+        final ConnectionFactory connectionFactory = createConnectionFactory();
 
         this.amqpConnection = connectionFactory.newConnection();
         this.amqpChannel = amqpConnection.createChannel();
@@ -367,6 +362,18 @@ public class AMQPSpout implements IRichSpout {
 
         this.amqpConsumer = new QueueingConsumer(amqpChannel);
         this.amqpConsumerTag = amqpChannel.basicConsume(queueName, false /* no auto-ack */, amqpConsumer);
+    }
+
+    protected ConnectionFactory createConnectionFactory() {
+        final ConnectionFactory connectionFactory = new ConnectionFactory();
+
+        connectionFactory.setHost(amqpHost);
+        connectionFactory.setPort(amqpPort);
+        connectionFactory.setUsername(amqpUsername);
+        connectionFactory.setPassword(amqpPassword);
+        connectionFactory.setVirtualHost(amqpVhost);
+
+        return connectionFactory;
     }
 
 

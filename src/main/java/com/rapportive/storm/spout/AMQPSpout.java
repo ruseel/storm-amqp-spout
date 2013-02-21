@@ -102,12 +102,12 @@ public class AMQPSpout implements IRichSpout {
      */
     public static String ERROR_STREAM_NAME = "error-stream";
 
-    private final String amqpHost;
-    private final int amqpPort;
-    private final String amqpUsername;
-    private final String amqpPassword;
-    private final String amqpVhost;
-    private final boolean requeueOnFail;
+    protected final String amqpHost;
+    protected final int amqpPort;
+    protected final String amqpUsername;
+    protected final String amqpPassword;
+    protected final String amqpVhost;
+    protected final boolean requeueOnFail;
 
     private final QueueDeclaration queueDeclaration;
 

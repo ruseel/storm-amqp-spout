@@ -1,17 +1,18 @@
 package com.rapportive.storm.spout;
 
-import backtype.storm.spout.Scheme;
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.utils.Utils;
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.utils.Utils;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.*;
 import com.rapportive.storm.amqp.QueueDeclaration;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 /**
@@ -120,7 +121,7 @@ public class AMQPSpout implements IRichSpout {
      * @param password  password to authenticate to the broker
      * @param vhost  vhost on the broker
      * @param queueDeclaration  declaration of the queue / exchange bindings
-     * @param scheme  {@link backtype.storm.spout.Scheme} used to deserialise
+     * @param scheme  {@link org.apache.storm.spout.Scheme} used to deserialise
      *          each AMQP message into a Storm tuple
      */
     public AMQPSpout(String host, int port, String username, String password, String vhost, QueueDeclaration queueDeclaration, Scheme scheme) {
@@ -141,7 +142,7 @@ public class AMQPSpout implements IRichSpout {
      * @param password  password to authenticate to the broker
      * @param vhost  vhost on the broker
      * @param queueDeclaration  declaration of the queue / exchange bindings
-     * @param scheme  {@link backtype.storm.spout.Scheme} used to deserialise
+     * @param scheme  {@link org.apache.storm.spout.Scheme} used to deserialise
      *          each AMQP message into a Storm tuple
      * @param requeueOnFail  whether messages should be requeued on failure 
      */
@@ -259,7 +260,7 @@ public class AMQPSpout implements IRichSpout {
                 if (delivery == null) return;
                 final long deliveryTag = delivery.getEnvelope().getDeliveryTag();
                 final byte[] message = delivery.getBody();
-                collector.emit(serialisationScheme.deserialize(message), deliveryTag);
+                collector.emit(serialisationScheme.deserialize(ByteBuffer.wrap(message)), deliveryTag);
                 /*
                  * TODO what to do about malformed messages? Skip?
                  * Avoid infinite retry!
@@ -339,7 +340,7 @@ public class AMQPSpout implements IRichSpout {
 
     /**
      * Declares the output fields of this spout according to the provided
-     * {@link backtype.storm.spout.Scheme}.
+     * {@link org.apache.storm.spout.Scheme}.
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
